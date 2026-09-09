@@ -30,7 +30,8 @@ LINEA_ACCION = os.getenv("TEST_LINEA_ACCION")
 
 def run(playwright: Playwright) -> None:
     ###
-    #Items de prueba, luego se reemplazará por 
+    #Items de prueba, luego se reemplazará por datos extraidos del sheets
+    """
     items = [
         {   
             "descripcion": "Tapa Ciega Blanco PANDUIT CMBIW-X",
@@ -51,9 +52,38 @@ def run(playwright: Playwright) -> None:
             "nombre_corto_proveedor" : "CORPORACIO-102"
         }
     ]
+    """
+    items = [
+        {   
+            "descripcion": "SET26 Servicio internet móvil 30GB por modem (6set26-5oct26) - Fondo de conectividad",
+            "cantidad": 1,
+            "precio"  : "11246,40",
+            "nombre_corto_proveedor" : ""
+        },
+        {
+            "descripcion": "OCT26 Servicio internet móvil 30GB por modem (6oct26-5nov26) - Fondo de conectividad",
+            "cantidad": 1,
+            "precio"  : "11246,40",
+            "nombre_corto_proveedor" : ""
+        },
+        {
+            "descripcion": "NOV26 Servicio internet móvil 30GB por modem (6nov26-5dic26) - Fondo de conectividad",
+            "cantidad": 1,
+            "precio"  : "11246,40",
+            "nombre_corto_proveedor" : ""
+        },
+        {
+            "descripcion": "DIC26 Servicio internet móvil 30GB por modem (6dic26-5ene27) - Fondo de conectividad",
+            "cantidad": 1,
+            "precio"  : "11246,40",
+            "nombre_corto_proveedor" : ""
+        }
+    ]
     ###
 
-    browser = playwright.chromium.launch(headless=False,slow_mo = 0)
+    CATEGORIA = "INTERNET_LINEA" #Cambiar cuando sea necesario, MAT_INFORMATICO, por ejemplo
+    NOMBRE_SOLICITUD = "Fondo conectividad" #cambiar a "STOCK PRUEBA" cuando sea necesario.
+    browser = playwright.chromium.launch(headless=False,slow_mo = 500)
     context = browser.new_context()
     page = context.new_page()
     page.goto("https://centuria.pucp.edu.pe/")
@@ -78,13 +108,13 @@ def run(playwright: Playwright) -> None:
     page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("button", name="Acep").click()
     page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("textbox", name="Nombre Solicitud:").click()
     page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("textbox", name="Nombre Solicitud:").press("CapsLock")
-    page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("textbox", name="Nombre Solicitud:").fill("STOCK PRUEBA")
+    page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("textbox", name="Nombre Solicitud:").fill(NOMBRE_SOLICITUD)
     page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("textbox", name="Nombre Solicitud:").press("CapsLock")
     page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("button", name="Expandir Sección Valores p/").click()
     page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("radio", name="Sustituir").check()
     page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("textbox", name="Categoría:").click()
     page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("textbox", name="Categoría:").press("CapsLock")
-    page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("textbox", name="Categoría:").fill("MAT_INFORMATICO")
+    page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("textbox", name="Categoría:").fill(CATEGORIA)
     page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("textbox", name="Categoría:").press("Tab")
     page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("button", name="Consulta Categoría").press("Tab")
     page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("textbox", name="Unidad Medida:").fill("UND")
@@ -126,11 +156,12 @@ def run(playwright: Playwright) -> None:
         page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("textbox", name="Precio:").fill(str(items[i]['precio']))
         page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("textbox", name="Cantidad:").click()
         page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("textbox", name="Cantidad:").fill(str(items[i]['cantidad']))
-        page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("button", name="Búsqueda Proveedor").click()
-        page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("textbox", name="Nombre Corto Proveedor:").click()
-        page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("textbox", name="Nombre Corto Proveedor:").fill(str(items[i]['nombre_corto_proveedor']))
-        page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("button", name="Buscar").click()
-        page.locator("iframe[name=\"TargetContent\"]").content_frame.locator("[id=\"VENDOR_ID$0\"]").click()
+        if items[i]['nombre_corto_proveedor'] != "":
+            page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("button", name="Búsqueda Proveedor").click()
+            page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("textbox", name="Nombre Corto Proveedor:").click()
+            page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("textbox", name="Nombre Corto Proveedor:").fill(str(items[i]['nombre_corto_proveedor']))
+            page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("button", name="Buscar").click()
+            page.locator("iframe[name=\"TargetContent\"]").content_frame.locator("[id=\"VENDOR_ID$0\"]").click()
         page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("button", name="Añadir Art").click()
 
     page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("cell", name="Revisión y Presentación").nth(3).click()
