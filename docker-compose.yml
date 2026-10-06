@@ -1,0 +1,14 @@
+services:
+  register_bot:
+    build: .
+    container_name: register_id_scraper
+    environment:
+      - TZ=America/Lima
+      - PYTHONUNBUFFERED=1
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    ports:
+      - "8081:8080"
+    restart: unless-stopped
