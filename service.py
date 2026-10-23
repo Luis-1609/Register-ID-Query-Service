@@ -24,7 +24,7 @@ def ejecutar_registro_id(
 
     # Valores dinámicos del Chartfield (prioridad al Sheet, fallback al .env si viniera vacío)
     # Se añade zfill() para asegurar que los ceros a la izquierda perdidos en Sheets se restauren.
-    unidad = str(chartfield.get("unidad") or os.getenv("TEST_UNIDAD", "")).strip().strip('"').strip("'").zfill(5)
+    unidad = str(chartfield.get("unidad") or os.getenv("TEST_UNIDAD", "")).strip().strip('"').strip("'") # Le quité el ".zfill(5) para evitar que se altere el núnero exacto de la unidad y evitar errores"
     actividad = str(chartfield.get("actividad") or os.getenv("TEST_ACTIVIDAD", "")).strip().strip('"').strip("'")
     sede = str(chartfield.get("sede") or os.getenv("TEST_SEDE", "")).strip().strip('"').strip("'").zfill(3)
     ref_ppto = str(chartfield.get("ref_ppto") or os.getenv("TEST_REF_PPTO", "")).strip().strip('"').strip("'").zfill(4)
@@ -32,7 +32,7 @@ def ejecutar_registro_id(
 
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(
-            headless=True,
+            headless=False,
             slow_mo=100, # Da tiempo a que las animaciones y menús de Centuria abran correctamente
             args=["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"]
         )
@@ -151,12 +151,12 @@ def ejecutar_registro_id(
             page.locator("iframe[name=\"TargetContent\"]").content_frame.locator("[id=\"CHARTFIELD1$0\"]").fill(str(linea_accion))
             page.locator("iframe[name=\"TargetContent\"]").content_frame.locator("[id=\"CHARTFIELD1$0\"]").press("Tab")
             ##page.wait_for_timeout(1000)
-            #page.screenshot(path="debug_pre_contin.png")
+            page.screenshot(path="debug_pre_contin.png")
 
             logger.info("Continuar y seleccionar Artículo Especial...")
-            page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("button", name="Contin").click(force=True)
-            ##page.wait_for_timeout(2000)
-            #page.screenshot(path="debug_post_contin.png")
+            page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("button", name="Contin").click()
+            #page.wait_for_timeout(2000)
+            page.screenshot(path="debug_post_contin.png")
             
             page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_text("Artículo Especial").first.click(force=True)
             ##page.wait_for_timeout(1000)
@@ -206,6 +206,28 @@ def ejecutar_registro_id(
 
                 logger.info(f"Añadiendo artículo {i+1} a la lista...")
                 page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("button", name="Añadir Art").click()
+                
+                #    Aquí va el IF para manejar el PopUp de advertencia por descripción repetida
+                # Esperar 1 segundo a que PeopleSoft procese o levante la advertencia
+                page.wait_for_timeout(1000)
+
+                # Verificar si apareció el popup de advertencia (descripción repetida)
+                btn_ok = page.locator("#okbutton")
+                btn_ok_frame = page.locator("iframe[name=\"TargetContent\"]").content_frame.locator("#okbutton")
+
+                if btn_ok.is_visible(timeout=1000):
+                    logger.warning(f"[ADVERTENCIA] Ítem {i+1} ('{desc}'): Descripción repetida detectada en Centuria. Aceptando diálogo...")
+                    btn_ok.click(force=True)
+                    page.wait_for_timeout(1000)
+                elif btn_ok_frame.is_visible(timeout=500):
+                    logger.warning(f"[ADVERTENCIA] Ítem {i+1} ('{desc}'): Descripción repetida detectada en frame. Aceptando diálogo...")
+                    btn_ok_frame.click(force=True)
+                    page.wait_for_timeout(1000)
+
+                # SS debug: resultado después de añadir el item
+                page.screenshot(path=f"/app/logs/ss_item_{i+1}_b_despues_anadir.png", full_page=True)
+
+                
 
                 # SS debug: resultado después de añadir el item
                 page.screenshot(path=f"/app/logs/ss_item_{i+1}_b_despues_anadir.png", full_page=True)
