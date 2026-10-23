@@ -38,6 +38,7 @@ def ejecutar_registro_id(
         )
         context = browser.new_context(
             viewport={"width": 1920, "height": 1080},
+            locale="es-PE", # Configuración cultural peruana para asegurar el formato de fechas y números
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
         )
         page = context.new_page()
@@ -165,7 +166,14 @@ def ejecutar_registro_id(
             logger.info(f"Empezando iteración de {len(items)} items...")
             for i in range(len(items)):
                 desc = items[i].get('descripcion', '')
-                precio = str(items[i].get('precio', ''))
+
+                #precio = str(items[i].get('precio', ''))
+                precio_raw = str(items[i].get('precio', ''))
+                if "," in precio_raw and "." in precio_raw:
+                    precio_raw = precio_raw.replace(",", "")
+                # Convertimos el punto decimal a coma (ej: '377.79' -> '377,79')
+                
+                precio = precio_raw.replace(".", ",")
                 cantidad = str(items[i].get('cantidad', ''))
                 prov = items[i].get('nombre_corto_proveedor', '')
                 categoria_linea = items[i].get('categoria_linea', '')
@@ -245,6 +253,20 @@ def ejecutar_registro_id(
             page.screenshot(path="/app/logs/ss_03_esperando_5s.png", full_page=True)
 
             logger.info("Recopilando ID de requerimiento, monto y moneda...")
+
+            ## Verificar si apareció el popup de advertencia (descripción repetida)
+            #btn_ok = page.locator("#okbutton")
+            #btn_ok_frame = page.locator("iframe[name=\"TargetContent\"]").content_frame.locator("#okbutton")
+
+            #if btn_ok.is_visible(timeout=1000):
+            #    logger.warning(f"[ADVERTENCIA] Descripción repetida detectada en Centuria. Aceptando diálogo...")
+            #    btn_ok.click(force=True)
+            #    page.wait_for_timeout(1000)
+            #elif btn_ok_frame.is_visible(timeout=500):
+            #    logger.warning(f"[ADVERTENCIA] Descripción repetida detectada en frame. Aceptando diálogo...")
+            #    btn_ok_frame.click(force=True)
+            #    page.wait_for_timeout(1000)
+
             numero_req_id = page.locator("iframe[name=\"TargetContent\"]").content_frame.locator("#win0divREQ_HDR_REQ_ID").inner_text().strip()
             monto_total_id = page.locator("iframe[name=\"TargetContent\"]").content_frame.locator("#win0divREQ_PNLS_WRK_REQ_AMT_TTL").inner_text().strip()
             moneda = page.locator("iframe[name=\"TargetContent\"]").content_frame.locator("#win0divREQ_PNLS_WRK_CURRENCY_CD2").inner_text().strip()
