@@ -102,14 +102,6 @@ def ejecutar_registro_id(
             page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("button", name="Expandir Sección Valores p/").click()
             page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("radio", name="Sustituir").check()
             
-            #PROBANDO - REVISAR
-            #logger.info(f"Llenando Categoría: {categoria}")
-            #page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("textbox", name="Categoría:").click()
-            #page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("textbox", name="Categoría:").press("CapsLock")
-            #page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("textbox", name="Categoría:").fill(categoria)
-            #page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("textbox", name="Categoría:").press("Tab")
-            #page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("button", name="Consulta Categoría").press("Tab")
-            
             logger.info("Llenando Unidad Medida...")
             page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("textbox", name="Unidad Medida:").fill("UND")
             
@@ -167,13 +159,11 @@ def ejecutar_registro_id(
             for i in range(len(items)):
                 desc = items[i].get('descripcion', '')
 
-                #precio = str(items[i].get('precio', ''))
-                precio_raw = str(items[i].get('precio', ''))
-                if "," in precio_raw and "." in precio_raw:
-                    precio_raw = precio_raw.replace(",", "")
-                # Convertimos el punto decimal a coma (ej: '377.79' -> '377,79')
-                
-                precio = precio_raw.replace(".", ",")
+                # NORMALIZAR PRECIO: asegurar que no lleve comas y conserve el punto decimal
+                precio_raw = str(items[i].get('precio', '')).strip()
+                precio = precio_raw.replace(",", "")  # Elimina comas (si existen)
+                logger.info(f"DEBUG: Item {i+1} - Precio original: '{precio_raw}', Precio limpio: '{precio}'")
+
                 cantidad = str(items[i].get('cantidad', ''))
                 prov = items[i].get('nombre_corto_proveedor', '')
                 categoria_linea = items[i].get('categoria_linea', '')
@@ -190,15 +180,13 @@ def ejecutar_registro_id(
                     page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("textbox", name="Categoría:").dblclick()
                     page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("textbox", name="Categoría:").fill(categoria_linea)
                     page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("textbox", name="Categoría:").press("Tab")
-                    #page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("button", name="Consulta Categoría").click()
-                    #page.locator("iframe[name=\"ptModFrame_1\"]").content_frame.locator("#PV_SR_CATLU_WRK_CATEGORY_CD").click()
-                    #page.locator("iframe[name=\"ptModFrame_1\"]").content_frame.locator("#PV_SR_CATLU_WRK_CATEGORY_CD").fill(categoria_linea)
-                    #page.locator("iframe[name=\"ptModFrame_1\"]").content_frame.get_by_role("button", name="Buscar", description="Buscar Categoría").click()
-                    #page.locator("iframe[name=\"ptModFrame_1\"]").content_frame.get_by_role("link", name=categoria_linea).click()
+                    
                 
                 page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("textbox", name="Cantidad:").click()
                 page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("textbox", name="Cantidad:").fill(cantidad)
                 
+                """
+                Lo de proveedor difiere de null falta desarrollar (parece que ni es necesario)
                 if prov != "":
                     logger.info(f"Buscando proveedor {prov} para item {i+1}...")
                     page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("button", name="Búsqueda Proveedor").click()
@@ -206,7 +194,7 @@ def ejecutar_registro_id(
                     page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("textbox", name="Nombre Corto Proveedor:").fill(str(prov))
                     page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("button", name="Buscar").click()
                     page.locator("iframe[name=\"TargetContent\"]").content_frame.locator("[id=\"VENDOR_ID$0\"]").click()
-                
+                """
                 
                 
                 # SS debug: campos del item listos antes de añadir
@@ -217,21 +205,30 @@ def ejecutar_registro_id(
                 
                 #    Aquí va el IF para manejar el PopUp de advertencia por descripción repetida
                 # Esperar 1 segundo a que PeopleSoft procese o levante la advertencia
-                page.wait_for_timeout(1000)
+                #page.wait_for_timeout(1000)
 
                 # Verificar si apareció el popup de advertencia (descripción repetida)
-                btn_ok = page.locator("#okbutton")
-                btn_ok_frame = page.locator("iframe[name=\"TargetContent\"]").content_frame.locator("#okbutton")
+                #btn_ok = page.locator("#okbutton")
+                #btn_ok_frame = page.locator("iframe[name=\"TargetContent\"]").content_frame.locator("#okbutton")
 
-                if btn_ok.is_visible(timeout=1000):
-                    logger.warning(f"[ADVERTENCIA] Ítem {i+1} ('{desc}'): Descripción repetida detectada en Centuria. Aceptando diálogo...")
-                    btn_ok.click(force=True)
-                    page.wait_for_timeout(1000)
-                elif btn_ok_frame.is_visible(timeout=500):
-                    logger.warning(f"[ADVERTENCIA] Ítem {i+1} ('{desc}'): Descripción repetida detectada en frame. Aceptando diálogo...")
-                    btn_ok_frame.click(force=True)
-                    page.wait_for_timeout(1000)
+                #if btn_ok.is_visible(timeout=1000):
+                #    logger.warning(f"[ADVERTENCIA] Ítem {i+1} ('{desc}'): Descripción repetida detectada en Centuria. Aceptando diálogo...")
+                #    btn_ok.click(force=True)
+                #    page.wait_for_timeout(1000)
+                #elif btn_ok_frame.is_visible(timeout=500):
+                #    logger.warning(f"[ADVERTENCIA] Ítem {i+1} ('{desc}'): Descripción repetida detectada en frame. Aceptando diálogo...")
+                #    btn_ok_frame.click(force=True)
+                #    page.wait_for_timeout(1000)
 
+                try:
+                    # Espera hasta 2.5 segundos a que asome el botón. Apenas aparece, hace click al instante
+                    page.locator("#okbutton").click(timeout=2500, force=True)
+                    logger.warning(f"[ADVERTENCIA] Ítem {i+1} ('{desc}'): Descripción repetida detectada. Aceptando diálogo...")
+                    page.wait_for_timeout(500)
+                except:
+                    # Si en 2.5s no apareció el popup, significa que no hubo advertencia y continúa de inmediato
+                    pass
+                
                 # SS debug: resultado después de añadir el item
                 page.screenshot(path=f"/app/logs/ss_item_{i+1}_b_despues_anadir.png", full_page=True)
 
@@ -245,32 +242,34 @@ def ejecutar_registro_id(
 
             logger.info("Guardando y Enviando...")
             page.screenshot(path="/app/logs/ss_01_antes_guardar.png", full_page=True)
+            #page.wait_for_timeout(15000)
             page.locator("iframe[name=\"TargetContent\"]").content_frame.get_by_role("button", name="Guardar y Enviar").click()
             page.screenshot(path="/app/logs/ss_02_despues_guardar.png", full_page=True)
 
             logger.info("Esperando a que aparezca el ID de requerimiento...")
-            page.wait_for_timeout(5000)
+            #page.wait_for_timeout(5000)
             page.screenshot(path="/app/logs/ss_03_esperando_5s.png", full_page=True)
+
+            
+                        # Forma nativa de Playwright para botones opcionales:
+            try:
+                # Playwright espera HASTA 5 segundos a que aparezca.
+                # Apenas asome en pantalla (sea en 1s o 3s), le dará clic de inmediato.
+                page.get_by_role("button", name="Aceptar").click(timeout=5000, force=True)
+                logger.warning("[ADVERTENCIA] Popup detectado y aceptado con éxito.")
+            except:
+                # Si en 5 segundos nunca apareció, significa que no hubo advertencia y continúa directo
+                pass
+
 
             logger.info("Recopilando ID de requerimiento, monto y moneda...")
 
-            ## Verificar si apareció el popup de advertencia (descripción repetida)
-            #btn_ok = page.locator("#okbutton")
-            #btn_ok_frame = page.locator("iframe[name=\"TargetContent\"]").content_frame.locator("#okbutton")
-
-            #if btn_ok.is_visible(timeout=1000):
-            #    logger.warning(f"[ADVERTENCIA] Descripción repetida detectada en Centuria. Aceptando diálogo...")
-            #    btn_ok.click(force=True)
-            #    page.wait_for_timeout(1000)
-            #elif btn_ok_frame.is_visible(timeout=500):
-            #    logger.warning(f"[ADVERTENCIA] Descripción repetida detectada en frame. Aceptando diálogo...")
-            #    btn_ok_frame.click(force=True)
-            #    page.wait_for_timeout(1000)
-
+            
             numero_req_id = page.locator("iframe[name=\"TargetContent\"]").content_frame.locator("#win0divREQ_HDR_REQ_ID").inner_text().strip()
             monto_total_id = page.locator("iframe[name=\"TargetContent\"]").content_frame.locator("#win0divREQ_PNLS_WRK_REQ_AMT_TTL").inner_text().strip()
             moneda = page.locator("iframe[name=\"TargetContent\"]").content_frame.locator("#win0divREQ_PNLS_WRK_CURRENCY_CD2").inner_text().strip()
-
+            
+            
             logger.info(f"Éxito. Req ID: {numero_req_id} | Monto: {moneda} {monto_total_id}")
             return {
                 "status": "COMPLETADO",
