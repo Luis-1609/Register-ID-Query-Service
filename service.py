@@ -32,7 +32,7 @@ def ejecutar_registro_id(
 
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(
-            headless=False,
+            headless=True,
             slow_mo=100, # Da tiempo a que las animaciones y menús de Centuria abran correctamente
             args=["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"]
         )
